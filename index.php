@@ -625,39 +625,39 @@
             }
 
             function getLayoutConfig(nodeCount, edgeCount) {
-                // Calculate spacing based on complexity
-                const complexity = edgeCount / Math.max(1, nodeCount);
-                const repulsionMultiplier = Math.max(1, complexity * 2);
-                const edgeLengthMultiplier = Math.max(1, complexity * 1.5);
+                // For large graphs, use extreme spacing
+                const isLarge = nodeCount > 50;
+                const baseRepulsion = isLarge ? 500000 : 100000;
+                const baseEdgeLength = isLarge ? 500 : 300;
 
                 return {
                     name: 'cose',
                     animate: false,
-                    padding: 120,
-                    // Strong node repulsion to push nodes apart
+                    padding: 200,
+                    // Extreme node repulsion
                     nodeRepulsion: function(node) {
-                        return 80000 * repulsionMultiplier;
+                        return baseRepulsion;
                     },
-                    // Longer edges for better visibility
+                    // Very long edges
                     idealEdgeLength: function(edge) {
-                        return 250 * edgeLengthMultiplier;
+                        return baseEdgeLength;
                     },
-                    // Lower elasticity = edges can stretch more
-                    edgeElasticity: function(edge) { return 50; },
-                    nestingFactor: 1.2,
-                    // Low gravity = nodes spread more freely
-                    gravity: 0.08,
-                    // More iterations for better layout
-                    numIter: 2000,
-                    initialTemp: 400,
-                    coolingFactor: 0.95,
+                    // Very flexible edges
+                    edgeElasticity: function(edge) { return 20; },
+                    nestingFactor: 5,
+                    // Minimal gravity - let nodes spread freely
+                    gravity: 0.01,
+                    // Many iterations
+                    numIter: 5000,
+                    initialTemp: 1000,
+                    coolingFactor: 0.99,
                     minTemp: 1.0,
                     fit: true,
                     randomize: true,
-                    // Space between disconnected components
-                    componentSpacing: 200,
-                    // Node overlap prevention
-                    nodeOverlap: 50
+                    componentSpacing: 500,
+                    nodeOverlap: 100,
+                    // Refresh rate for layout
+                    refresh: 20
                 };
             }
 
