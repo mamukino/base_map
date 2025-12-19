@@ -100,6 +100,15 @@
             background-color: rgba(59, 130, 246, 0.2);
             border-color: #3B82F6;
         }
+
+        /* Selection info badge */
+        .selection-badge {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen overflow-hidden">
@@ -115,9 +124,7 @@
                     </svg>
                     <h1 class="text-xl font-bold">Database Schema Visualizer</h1>
                 </div>
-                <span id="db-info" class="text-sm text-slate-400 hidden">
-                    <!-- Populated dynamically -->
-                </span>
+                <span id="db-info" class="text-sm text-slate-400 hidden"></span>
             </div>
 
             <!-- Search Bar -->
@@ -132,11 +139,7 @@
                     <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <button
-                        id="clear-search"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 hidden"
-                        title="Clear search"
-                    >
+                    <button id="clear-search" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 hidden" title="Clear search">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -145,29 +148,22 @@
 
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
-                    <button
-                        id="btn-fit"
-                        class="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
-                        title="Fit to screen"
-                    >
+                    <button id="btn-reset-positions" class="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors" title="Reset saved positions">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                    <button id="btn-fit" class="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors" title="Fit to screen">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
                         </svg>
                     </button>
-                    <button
-                        id="btn-relayout"
-                        class="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
-                        title="Re-layout graph"
-                    >
+                    <button id="btn-relayout" class="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors" title="Re-layout graph (clears saved positions)">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
                     </button>
-                    <button
-                        id="btn-export"
-                        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors font-medium"
-                        title="Export as PNG"
-                    >
+                    <button id="btn-export" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors font-medium" title="Export as PNG">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -182,7 +178,6 @@
 
             <!-- Left Sidebar - Isolated Tables -->
             <div id="isolated-sidebar" class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col flex-shrink-0 hidden">
-                <!-- Sidebar Header -->
                 <div class="p-4 border-b border-slate-700">
                     <div class="flex items-center gap-2 text-slate-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,23 +187,10 @@
                     </div>
                     <p class="text-xs text-slate-500 mt-1">Tables with no relationships</p>
                 </div>
-
-                <!-- Sidebar Search -->
                 <div class="p-3 border-b border-slate-700">
-                    <input
-                        type="text"
-                        id="isolated-search"
-                        placeholder="Filter isolated..."
-                        class="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
+                    <input type="text" id="isolated-search" placeholder="Filter isolated..." class="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
-
-                <!-- Table List -->
-                <div id="isolated-list" class="flex-1 overflow-y-auto p-2 space-y-1">
-                    <!-- Populated dynamically -->
-                </div>
-
-                <!-- Sidebar Footer -->
+                <div id="isolated-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
                 <div class="p-3 border-t border-slate-700 text-xs text-slate-500">
                     <span id="isolated-count">0</span> isolated tables
                 </div>
@@ -216,7 +198,6 @@
 
             <!-- Graph Container -->
             <div class="flex-1 relative overflow-hidden">
-                <!-- Cytoscape Container -->
                 <div id="cy" class="absolute inset-0"></div>
 
                 <!-- Loading Overlay -->
@@ -235,12 +216,7 @@
                         </svg>
                         <h2 class="text-xl font-bold mb-2">Connection Error</h2>
                         <p id="error-message" class="text-slate-400 mb-4">Unable to load schema data.</p>
-                        <button
-                            id="btn-retry"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
-                        >
-                            Retry
-                        </button>
+                        <button id="btn-retry" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors">Retry</button>
                     </div>
                 </div>
 
@@ -261,9 +237,13 @@
                             <span class="text-sm">Connected Table</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <div class="w-6 h-6 rounded bg-slate-700 border-2 border-blue-400 border-opacity-50"></div>
-                            <span class="text-sm">Highly Connected (5+)</span>
+                            <div class="w-6 h-6 rounded bg-yellow-900 border-2 border-yellow-500"></div>
+                            <span class="text-sm">Selected (multi)</span>
                         </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-700 text-xs text-slate-500">
+                        <p>Shift+Click: Multi-select</p>
+                        <p>Drag box: Select group</p>
                     </div>
                 </div>
 
@@ -297,6 +277,18 @@
                     </button>
                 </div>
 
+                <!-- Selection Badge -->
+                <div id="selection-badge" class="selection-badge hidden">
+                    <div class="bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-3">
+                        <span id="selection-count">0</span> tables selected
+                        <button id="btn-clear-selection" class="hover:bg-yellow-500 p-1 rounded">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Tooltip -->
                 <div id="tooltip" class="tooltip hidden"></div>
             </div>
@@ -304,17 +296,18 @@
     </div>
 
     <script>
-        // ============================================================
-        // Database Schema Visualizer - Main Application
-        // ============================================================
-
         (function() {
             'use strict';
 
-            // Global state
+            // ============================================================
+            // Configuration & State
+            // ============================================================
+
+            const STORAGE_KEY = 'schema_visualizer_state';
             let cy = null;
             let schemaData = null;
             let isolatedTables = [];
+            let isDragging = false;
 
             // DOM Elements
             const elements = {
@@ -336,10 +329,14 @@
                 btnRetry: document.getElementById('btn-retry'),
                 btnZoomIn: document.getElementById('btn-zoom-in'),
                 btnZoomOut: document.getElementById('btn-zoom-out'),
+                btnResetPositions: document.getElementById('btn-reset-positions'),
                 isolatedSidebar: document.getElementById('isolated-sidebar'),
                 isolatedList: document.getElementById('isolated-list'),
                 isolatedCount: document.getElementById('isolated-count'),
-                isolatedSearch: document.getElementById('isolated-search')
+                isolatedSearch: document.getElementById('isolated-search'),
+                selectionBadge: document.getElementById('selection-badge'),
+                selectionCount: document.getElementById('selection-count'),
+                btnClearSelection: document.getElementById('btn-clear-selection')
             };
 
             // ============================================================
@@ -347,7 +344,6 @@
             // ============================================================
 
             const cytoscapeStyles = [
-                // Base node style
                 {
                     selector: 'node',
                     style: {
@@ -370,7 +366,6 @@
                         'transition-duration': '0.2s'
                     }
                 },
-                // Highly connected nodes (5+ connections)
                 {
                     selector: 'node[connections >= 5]',
                     style: {
@@ -380,7 +375,15 @@
                         'font-weight': 600
                     }
                 },
-                // Highlighted node (search result)
+                {
+                    selector: 'node:selected',
+                    style: {
+                        'background-color': '#78350F',
+                        'border-color': '#F59E0B',
+                        'border-width': 3,
+                        'z-index': 1000
+                    }
+                },
                 {
                     selector: 'node.highlighted',
                     style: {
@@ -391,7 +394,6 @@
                         'z-index': 999
                     }
                 },
-                // Neighbor of highlighted node
                 {
                     selector: 'node.neighbor',
                     style: {
@@ -401,14 +403,12 @@
                         'z-index': 998
                     }
                 },
-                // Dimmed nodes (not in search)
                 {
                     selector: 'node.dimmed',
                     style: {
                         'opacity': 0.15
                     }
                 },
-                // Hovered node
                 {
                     selector: 'node:active',
                     style: {
@@ -417,7 +417,6 @@
                         'overlay-opacity': 0.2
                     }
                 },
-                // Base edge style
                 {
                     selector: 'edge',
                     style: {
@@ -431,7 +430,6 @@
                         'transition-duration': '0.2s'
                     }
                 },
-                // Foreign Key edges (solid blue)
                 {
                     selector: 'edge[type = "foreign_key"]',
                     style: {
@@ -441,7 +439,6 @@
                         'width': 2
                     }
                 },
-                // Trigger dependency edges (dashed red)
                 {
                     selector: 'edge[type = "trigger"]',
                     style: {
@@ -451,7 +448,6 @@
                         'width': 2
                     }
                 },
-                // Highlighted edges
                 {
                     selector: 'edge.highlighted',
                     style: {
@@ -459,14 +455,69 @@
                         'z-index': 999
                     }
                 },
-                // Dimmed edges
                 {
                     selector: 'edge.dimmed',
                     style: {
                         'opacity': 0.08
                     }
+                },
+                {
+                    selector: 'core',
+                    style: {
+                        'selection-box-color': '#F59E0B',
+                        'selection-box-border-color': '#D97706',
+                        'selection-box-border-width': 2,
+                        'selection-box-opacity': 0.3
+                    }
                 }
             ];
+
+            // ============================================================
+            // LocalStorage Functions
+            // ============================================================
+
+            function saveState() {
+                if (!cy) return;
+
+                const positions = {};
+                cy.nodes().forEach(node => {
+                    const pos = node.position();
+                    positions[node.id()] = { x: pos.x, y: pos.y };
+                });
+
+                const state = {
+                    positions: positions,
+                    pan: cy.pan(),
+                    zoom: cy.zoom(),
+                    timestamp: Date.now()
+                };
+
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                } catch (e) {
+                    console.warn('Failed to save state to localStorage:', e);
+                }
+            }
+
+            function loadState() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        return JSON.parse(saved);
+                    }
+                } catch (e) {
+                    console.warn('Failed to load state from localStorage:', e);
+                }
+                return null;
+            }
+
+            function clearSavedState() {
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                } catch (e) {
+                    console.warn('Failed to clear localStorage:', e);
+                }
+            }
 
             // ============================================================
             // Data Loading
@@ -478,29 +529,21 @@
                     hideError();
 
                     const response = await fetch('get_schema.php');
-
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
 
                     const data = await response.json();
-
                     if (data.error) {
                         throw new Error(data.message || 'Unknown error occurred');
                     }
 
                     schemaData = data;
-
-                    // Separate isolated and connected tables
                     const { connectedNodes, isolatedNodes } = separateNodes(data);
                     isolatedTables = isolatedNodes;
 
-                    // Initialize graph with only connected nodes
                     initializeCytoscape(connectedNodes, data.edges);
-
-                    // Populate isolated tables sidebar
                     populateIsolatedSidebar(isolatedNodes);
-
                     updateStats(data, connectedNodes.length, isolatedNodes.length);
                     updateDbInfo(data.meta);
                     showLoading(false);
@@ -511,9 +554,6 @@
                 }
             }
 
-            /**
-             * Separate nodes into connected and isolated
-             */
             function separateNodes(data) {
                 const connectedNodes = [];
                 const isolatedNodes = [];
@@ -526,52 +566,8 @@
                     }
                 });
 
-                // Sort isolated nodes alphabetically
                 isolatedNodes.sort((a, b) => a.data.label.localeCompare(b.data.label));
-
                 return { connectedNodes, isolatedNodes };
-            }
-
-            // ============================================================
-            // Isolated Tables Sidebar
-            // ============================================================
-
-            function populateIsolatedSidebar(isolatedNodes) {
-                if (isolatedNodes.length === 0) {
-                    elements.isolatedSidebar.classList.add('hidden');
-                    return;
-                }
-
-                elements.isolatedSidebar.classList.remove('hidden');
-                elements.isolatedCount.textContent = isolatedNodes.length;
-
-                renderIsolatedList(isolatedNodes);
-            }
-
-            function renderIsolatedList(nodes, filter = '') {
-                const filterLower = filter.toLowerCase();
-                const filteredNodes = filter
-                    ? nodes.filter(n => n.data.label.toLowerCase().includes(filterLower))
-                    : nodes;
-
-                elements.isolatedList.innerHTML = filteredNodes.map(node => `
-                    <div class="isolated-item px-3 py-2 rounded border border-slate-700 cursor-pointer text-sm hover:border-blue-500"
-                         data-table="${escapeHtml(node.data.label)}">
-                        <div class="font-medium text-slate-200 truncate">${escapeHtml(node.data.label)}</div>
-                        <div class="text-xs text-slate-500 mt-0.5">
-                            ${formatNumber(node.data.rowCount)} rows
-                        </div>
-                    </div>
-                `).join('');
-
-                // Add click handlers
-                elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const tableName = item.dataset.table;
-                        elements.searchInput.value = tableName;
-                        performSearch(tableName);
-                    });
-                });
             }
 
             // ============================================================
@@ -579,49 +575,73 @@
             // ============================================================
 
             function initializeCytoscape(nodes, edges) {
-                // Destroy existing instance
                 if (cy) {
                     cy.destroy();
                 }
 
-                // Calculate dynamic spacing based on node count
-                const nodeCount = nodes.length;
-                const edgeCount = edges.length;
+                const savedState = loadState();
+                const hasSavedPositions = savedState && savedState.positions && Object.keys(savedState.positions).length > 0;
 
-                // More nodes/edges = more spacing needed
-                const baseSep = 60;
-                const baseRank = 120;
-
-                // Increase spacing for complex graphs
-                const complexityFactor = Math.min(2.5, 1 + (edgeCount / nodeCount) * 0.3);
-                const nodeSep = Math.round(baseSep * complexityFactor);
-                const rankSep = Math.round(baseRank * complexityFactor);
+                // Apply saved positions to nodes if available
+                if (hasSavedPositions) {
+                    nodes = nodes.map(node => {
+                        const savedPos = savedState.positions[node.data.id];
+                        if (savedPos) {
+                            return {
+                                ...node,
+                                position: { x: savedPos.x, y: savedPos.y }
+                            };
+                        }
+                        return node;
+                    });
+                }
 
                 // Create Cytoscape instance
                 cy = cytoscape({
                     container: elements.cy,
                     elements: [...nodes, ...edges],
                     style: cytoscapeStyles,
-                    layout: {
-                        name: 'dagre',
-                        rankDir: 'TB',
-                        nodeSep: nodeSep,
-                        edgeSep: 40,
-                        rankSep: rankSep,
-                        padding: 60,
-                        animate: true,
-                        animationDuration: 500,
-                        fit: true,
-                        spacingFactor: 1.2
-                    },
-                    minZoom: 0.05,
+                    layout: hasSavedPositions ? { name: 'preset' } : getLayoutConfig(nodes.length, edges.length),
+                    minZoom: 0.02,
                     maxZoom: 4,
                     wheelSensitivity: 0.3,
-                    boxSelectionEnabled: false
+                    boxSelectionEnabled: true,
+                    selectionType: 'additive',
+                    autoungrabify: false
                 });
 
-                // Setup event handlers
+                // Restore pan and zoom if saved
+                if (hasSavedPositions && savedState.pan && savedState.zoom) {
+                    cy.viewport({
+                        pan: savedState.pan,
+                        zoom: savedState.zoom
+                    });
+                } else {
+                    // Fit to screen on first load
+                    cy.fit(undefined, 50);
+                }
+
                 setupEventHandlers();
+            }
+
+            function getLayoutConfig(nodeCount, edgeCount) {
+                // Use COSE layout for better 2D distribution
+                return {
+                    name: 'cose',
+                    animate: false,
+                    padding: 80,
+                    nodeRepulsion: function(node) { return 8000; },
+                    idealEdgeLength: function(edge) { return 150; },
+                    edgeElasticity: function(edge) { return 100; },
+                    nestingFactor: 1.2,
+                    gravity: 0.25,
+                    numIter: 1000,
+                    initialTemp: 300,
+                    coolingFactor: 0.95,
+                    minTemp: 1.0,
+                    fit: true,
+                    randomize: true
+                };
             }
 
             // ============================================================
@@ -629,6 +649,23 @@
             // ============================================================
 
             function setupEventHandlers() {
+                // Node drag events - save position after drag
+                cy.on('dragfree', 'node', function(event) {
+                    saveState();
+                });
+
+                // Pan and zoom - save state
+                cy.on('pan zoom', debounce(function() {
+                    if (!isDragging) {
+                        saveState();
+                    }
+                }, 300));
+
+                // Selection change
+                cy.on('select unselect', 'node', function() {
+                    updateSelectionBadge();
+                });
+
                 // Node hover - show tooltip
                 cy.on('mouseover', 'node', function(event) {
                     const node = event.target;
@@ -649,20 +686,27 @@
                     hideTooltip();
                 });
 
-                // Node click - focus and show neighbors
+                // Click on node without shift - focus and highlight neighbors
                 cy.on('tap', 'node', function(event) {
-                    const node = event.target;
-                    focusNode(node.id());
-                    elements.searchInput.value = node.data('label');
-                    elements.clearSearch.classList.remove('hidden');
+                    if (!event.originalEvent.shiftKey) {
+                        const node = event.target;
+                        // Only focus if single selection
+                        if (cy.$(':selected').length <= 1) {
+                            focusNode(node.id());
+                            elements.searchInput.value = node.data('label');
+                            elements.clearSearch.classList.remove('hidden');
+                        }
+                    }
                 });
 
-                // Background click - reset view
+                // Background click - deselect all and reset highlighting
                 cy.on('tap', function(event) {
                     if (event.target === cy) {
+                        cy.nodes().unselect();
                         resetHighlighting();
                         elements.searchInput.value = '';
                         elements.clearSearch.classList.add('hidden');
+                        updateSelectionBadge();
                     }
                 });
 
@@ -670,6 +714,63 @@
                 cy.on('mousemove', function(event) {
                     if (elements.tooltip.classList.contains('hidden')) return;
                     updateTooltipPosition(event.renderedPosition || event.position);
+                });
+
+                // Track dragging state
+                cy.on('grab', function() {
+                    isDragging = true;
+                });
+
+                cy.on('free', function() {
+                    isDragging = false;
+                });
+            }
+
+            function updateSelectionBadge() {
+                const selected = cy.$(':selected').length;
+                if (selected > 1) {
+                    elements.selectionCount.textContent = selected;
+                    elements.selectionBadge.classList.remove('hidden');
+                } else {
+                    elements.selectionBadge.classList.add('hidden');
+                }
+            }
+
+            // ============================================================
+            // Isolated Tables Sidebar
+            // ============================================================
+
+            function populateIsolatedSidebar(isolatedNodes) {
+                if (isolatedNodes.length === 0) {
+                    elements.isolatedSidebar.classList.add('hidden');
+                    return;
+                }
+
+                elements.isolatedSidebar.classList.remove('hidden');
+                elements.isolatedCount.textContent = isolatedNodes.length;
+                renderIsolatedList(isolatedNodes);
+            }
+
+            function renderIsolatedList(nodes, filter = '') {
+                const filterLower = filter.toLowerCase();
+                const filteredNodes = filter
+                    ? nodes.filter(n => n.data.label.toLowerCase().includes(filterLower))
+                    : nodes;
+
+                elements.isolatedList.innerHTML = filteredNodes.map(node => `
+                    <div class="isolated-item px-3 py-2 rounded border border-slate-700 cursor-pointer text-sm hover:border-blue-500"
+                         data-table="${escapeHtml(node.data.label)}">
+                        <div class="font-medium text-slate-200 truncate">${escapeHtml(node.data.label)}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">${formatNumber(node.data.rowCount)} rows</div>
+                    </div>
+                `).join('');
+
+                elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const tableName = item.dataset.table;
+                        elements.searchInput.value = tableName;
+                        performSearch(tableName);
+                    });
                 });
             }
 
@@ -687,17 +788,13 @@
                 elements.clearSearch.classList.remove('hidden');
                 const searchTerm = query.toLowerCase().trim();
 
-                // Check if it's an isolated table
                 const isIsolated = isolatedTables.some(t =>
                     t.data.label.toLowerCase() === searchTerm ||
                     t.data.label.toLowerCase().includes(searchTerm)
                 );
 
                 if (isIsolated && cy) {
-                    // Dim all nodes when searching for isolated table
                     cy.elements().addClass('dimmed');
-
-                    // Highlight in sidebar
                     elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
                         if (item.dataset.table.toLowerCase().includes(searchTerm)) {
                             item.classList.add('bg-blue-900', 'border-blue-500');
@@ -709,14 +806,12 @@
                     return;
                 }
 
-                // Clear sidebar highlights
                 elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
                     item.classList.remove('bg-blue-900', 'border-blue-500');
                 });
 
                 if (!cy) return;
 
-                // Find matching nodes in graph
                 const matchingNodes = cy.nodes().filter(node => {
                     const label = node.data('label').toLowerCase();
                     return label.includes(searchTerm);
@@ -727,7 +822,6 @@
                     return;
                 }
 
-                // Focus on the first match
                 const primaryMatch = matchingNodes.first();
                 focusNode(primaryMatch.id());
             }
@@ -735,26 +829,20 @@
             function focusNode(nodeId) {
                 if (!cy) return;
 
-                // Reset previous highlighting
                 cy.elements().removeClass('highlighted neighbor dimmed');
 
-                // Get target node
                 const targetNode = cy.getElementById(nodeId);
                 if (!targetNode || targetNode.length === 0) return;
 
-                // Get connected edges and neighbor nodes
                 const connectedEdges = targetNode.connectedEdges();
                 const neighborNodes = targetNode.neighborhood('node');
 
-                // Apply highlighting
                 targetNode.addClass('highlighted');
                 neighborNodes.addClass('neighbor');
                 connectedEdges.addClass('highlighted');
 
-                // Dim everything else
                 cy.elements().not(targetNode).not(neighborNodes).not(connectedEdges).addClass('dimmed');
 
-                // Center on the node
                 cy.animate({
                     center: { eles: targetNode },
                     zoom: Math.min(cy.zoom(), 1.5),
@@ -766,8 +854,6 @@
                 if (cy) {
                     cy.elements().removeClass('highlighted neighbor dimmed');
                 }
-
-                // Clear sidebar highlights
                 elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
                     item.classList.remove('bg-blue-900', 'border-blue-500');
                 });
@@ -779,7 +865,6 @@
 
             function buildNodeTooltip(data) {
                 const connectionText = data.connections === 1 ? 'connection' : 'connections';
-
                 return `
                     <div class="font-semibold text-blue-400 mb-2">${escapeHtml(data.label)}</div>
                     <div class="text-sm text-slate-300 space-y-1">
@@ -832,7 +917,6 @@
                 let x = pos.x + containerRect.left + 15;
                 let y = pos.y + containerRect.top + 15;
 
-                // Keep tooltip within viewport
                 if (x + tooltipRect.width > window.innerWidth - 20) {
                     x = pos.x + containerRect.left - tooltipRect.width - 15;
                 }
@@ -870,74 +954,51 @@
             }
 
             function updateDbInfo(meta) {
-                const dbTypeLabels = {
-                    'mysql': 'MySQL',
-                    'oci': 'Oracle',
-                    'sqlsrv': 'SQL Server'
-                };
+                const dbTypeLabels = { 'mysql': 'MySQL', 'oci': 'Oracle', 'sqlsrv': 'SQL Server' };
                 const label = dbTypeLabels[meta.dbType] || meta.dbType.toUpperCase();
                 elements.dbInfo.textContent = `${label}: ${meta.database || 'Connected'}`;
                 elements.dbInfo.classList.remove('hidden');
             }
 
             // ============================================================
-            // Export Functionality
+            // Export & Layout Functions
             // ============================================================
 
             function exportPNG() {
                 if (!cy) return;
-
-                // Generate high-res PNG
-                const png = cy.png({
-                    output: 'blob',
-                    bg: '#0F172A',
-                    scale: 3,
-                    full: true
-                });
-
-                // Generate filename
+                const png = cy.png({ output: 'blob', bg: '#0F172A', scale: 3, full: true });
                 const dbName = schemaData?.meta?.database || 'schema';
                 const timestamp = new Date().toISOString().split('T')[0];
-                const filename = `${dbName}_schema_${timestamp}.png`;
-
-                // Save using FileSaver
-                saveAs(png, filename);
+                saveAs(png, `${dbName}_schema_${timestamp}.png`);
             }
-
-            // ============================================================
-            // Layout Functions
-            // ============================================================
 
             function runLayout() {
                 if (!cy) return;
 
+                clearSavedState();
+
                 const nodeCount = cy.nodes().length;
                 const edgeCount = cy.edges().length;
 
-                const complexityFactor = Math.min(2.5, 1 + (edgeCount / Math.max(1, nodeCount)) * 0.3);
-                const nodeSep = Math.round(60 * complexityFactor);
-                const rankSep = Math.round(120 * complexityFactor);
+                cy.layout(getLayoutConfig(nodeCount, edgeCount)).run();
 
-                cy.layout({
-                    name: 'dagre',
-                    rankDir: 'TB',
-                    nodeSep: nodeSep,
-                    edgeSep: 40,
-                    rankSep: rankSep,
-                    padding: 60,
-                    animate: true,
-                    animationDuration: 500,
-                    fit: true,
-                    spacingFactor: 1.2
-                }).run();
+                setTimeout(() => {
+                    cy.fit(undefined, 50);
+                    saveState();
+                }, 100);
             }
 
             function fitToScreen() {
                 if (!cy) return;
                 cy.animate({
-                    fit: { padding: 60 },
+                    fit: { padding: 50 },
                     duration: 300
                 });
+            }
+
+            function resetPositions() {
+                clearSavedState();
+                runLayout();
             }
 
             // ============================================================
@@ -968,7 +1029,6 @@
             // Event Bindings
             // ============================================================
 
-            // Main search input
             elements.searchInput.addEventListener('input', debounce(function(e) {
                 performSearch(e.target.value);
             }, 200));
@@ -981,25 +1041,22 @@
                 }
             });
 
-            // Isolated sidebar search
             elements.isolatedSearch.addEventListener('input', debounce(function(e) {
                 renderIsolatedList(isolatedTables, e.target.value);
             }, 150));
 
-            // Clear search button
             elements.clearSearch.addEventListener('click', function() {
                 elements.searchInput.value = '';
                 resetHighlighting();
                 this.classList.add('hidden');
             });
 
-            // Action buttons
             elements.btnFit.addEventListener('click', fitToScreen);
             elements.btnRelayout.addEventListener('click', runLayout);
             elements.btnExport.addEventListener('click', exportPNG);
             elements.btnRetry.addEventListener('click', loadSchemaData);
+            elements.btnResetPositions.addEventListener('click', resetPositions);
 
-            // Zoom buttons
             elements.btnZoomIn.addEventListener('click', function() {
                 if (cy) cy.zoom(cy.zoom() * 1.3);
             });
@@ -1008,29 +1065,43 @@
                 if (cy) cy.zoom(cy.zoom() / 1.3);
             });
 
-            // Keyboard shortcuts
+            elements.btnClearSelection.addEventListener('click', function() {
+                if (cy) {
+                    cy.nodes().unselect();
+                    updateSelectionBadge();
+                }
+            });
+
             document.addEventListener('keydown', function(e) {
-                // Ctrl/Cmd + F = Focus search
                 if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                     e.preventDefault();
                     elements.searchInput.focus();
                     elements.searchInput.select();
                 }
 
-                // Ctrl/Cmd + E = Export
                 if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
                     e.preventDefault();
                     exportPNG();
                 }
 
-                // Escape = Reset view
+                if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                    e.preventDefault();
+                    if (cy) {
+                        cy.nodes().select();
+                        updateSelectionBadge();
+                    }
+                }
+
                 if (e.key === 'Escape' && document.activeElement !== elements.searchInput) {
+                    if (cy) {
+                        cy.nodes().unselect();
+                        updateSelectionBadge();
+                    }
                     resetHighlighting();
                     fitToScreen();
                 }
             });
 
-            // Window resize
             window.addEventListener('resize', debounce(function() {
                 if (cy) cy.resize();
             }, 100));
