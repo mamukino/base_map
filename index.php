@@ -966,10 +966,36 @@
 
             function exportPNG() {
                 if (!cy) return;
-                const png = cy.png({ output: 'blob', bg: '#0F172A', scale: 3, full: true });
+
                 const dbName = schemaData?.meta?.database || 'schema';
                 const timestamp = new Date().toISOString().split('T')[0];
-                saveAs(png, `${dbName}_schema_${timestamp}.png`);
+                const filename = `${dbName}_schema_${timestamp}.png`;
+
+                try {
+                    // Get PNG as base64 data URL
+                    const pngData = cy.png({
+                        output: 'base64uri',
+                        bg: '#0F172A',
+                        scale: 3,
+                        full: true
+                    });
+
+                    // Convert base64 to blob
+                    const byteString = atob(pngData.split(',')[1]);
+                    const mimeString = pngData.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    const blob = new Blob([ab], { type: mimeString });
+
+                    // Download
+                    saveAs(blob, filename);
+                } catch (e) {
+                    console.error('Export failed:', e);
+                    alert('Export failed: ' + e.message);
+                }
             }
 
             function runLayout() {
