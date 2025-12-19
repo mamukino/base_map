@@ -21,19 +21,21 @@ return [
     | - sqlsrv: Microsoft SQL Server (requires sqlsrv extension)
     |
     */
-    'db_type' => 'mysql',
+    'db_type' => 'oci',
 
     /*
     |--------------------------------------------------------------------------
-    | Database Host
+    | Database Host / Connection String
     |--------------------------------------------------------------------------
     |
-    | The hostname or IP address of your database server.
-    | For Oracle, this can be a TNS name or connection string.
-    | Examples: 'localhost', '127.0.0.1', 'db.example.com', 'oracle-server:1521/ORCL'
+    | For MySQL/SQL Server: hostname or IP address
+    | For Oracle, supports multiple formats:
+    |   - EZConnect:      '//10.100.100.88:1521/testdb' or '//10.100.100.88/testdb'
+    |   - TNS Descriptor: '(DESCRIPTION=(ADDRESS=...))'
+    |   - Leave empty and set 'database' to a TNS alias from tnsnames.ora
     |
     */
-    'host' => 'localhost',
+    'host' => '//10.100.100.88/testdb',
 
     /*
     |--------------------------------------------------------------------------
@@ -42,68 +44,67 @@ return [
     |
     | The port number for database connection.
     | Default ports: MySQL=3306, Oracle=1521, SQL Server=1433
+    | Note: For Oracle EZConnect in 'host', port can be included there instead.
     |
     */
-    'port' => 3306,
+    'port' => 1521,
 
     /*
     |--------------------------------------------------------------------------
     | Database Name / Service Name
     |--------------------------------------------------------------------------
     |
-    | The name of the database to connect to.
-    | For Oracle, this is the service name or SID.
+    | For MySQL/SQL Server: The database name
+    | For Oracle: Service name, SID, or TNS alias
+    | Note: If using EZConnect format in 'host', this can be left empty.
     |
     */
-    'database' => 'your_database_name',
+    'database' => '',
 
     /*
     |--------------------------------------------------------------------------
     | Database Username
     |--------------------------------------------------------------------------
-    |
-    | The username for database authentication.
-    |
     */
-    'username' => 'your_username',
+    'username' => 'enreg',
 
     /*
     |--------------------------------------------------------------------------
     | Database Password
     |--------------------------------------------------------------------------
-    |
-    | The password for database authentication.
-    |
     */
-    'password' => 'your_password',
+    'password' => 'test',
 
     /*
     |--------------------------------------------------------------------------
-    | Character Set (MySQL/SQL Server)
+    | Character Set
     |--------------------------------------------------------------------------
     |
     | The character set for the connection.
+    | MySQL default: utf8mb4, Oracle default: UTF8
     |
     */
-    'charset' => 'utf8mb4',
+    'charset' => 'UTF8',
 
     /*
     |--------------------------------------------------------------------------
     | Schema Filter (Optional)
     |--------------------------------------------------------------------------
     |
-    | For Oracle and SQL Server, you can specify a schema to filter.
-    | Leave empty to use the default schema for the connected user.
+    | For Oracle and SQL Server, specify the schema to query.
+    | For Oracle: defaults to the connected username (uppercase)
+    | For SQL Server: defaults to 'dbo'
     |
     */
-    'schema' => '',
+    'schema' => 'ENREG',
 
     /*
     |--------------------------------------------------------------------------
-    | Connection Options
+    | Connection Options (PDO)
     |--------------------------------------------------------------------------
     |
     | Additional PDO options for the connection.
+    | Note: OCI8 native driver ignores these options.
     |
     */
     'options' => [

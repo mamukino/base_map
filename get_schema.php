@@ -92,19 +92,16 @@ class SchemaExtractor
 
     private function connectOracle(): void
     {
-        // For Oracle, we use OCI8 if available, otherwise PDO_OCI
-        $host = $this->config['host'];
-        $port = $this->config['port'] ?? 1521;
-        $database = $this->config['database'];
-
-        // Build connection string
-        $connectionString = "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={$host})(PORT={$port}))(CONNECT_DATA=(SERVICE_NAME={$database})))";
+        // Build connection string based on config format
+        $connectionString = $this->buildOracleConnectionString();
+        $charset = $this->config['charset'] ?? 'UTF8';
 
         if (extension_loaded('oci8')) {
             $this->connection = oci_connect(
                 $this->config['username'],
                 $this->config['password'],
-                $connectionString
+                $connectionString,
+                $charset
             );
 
             if (!$this->connection) {
@@ -113,7 +110,7 @@ class SchemaExtractor
             }
         } else {
             // Fallback to PDO_OCI
-            $dsn = "oci:dbname={$connectionString}";
+            $dsn = "oci:dbname={$connectionString};charset={$charset}";
             $this->connection = new PDO(
                 $dsn,
                 $this->config['username'],
@@ -121,6 +118,50 @@ class SchemaExtractor
                 $this->config['options'] ?? []
             );
         }
+    }
+
+    /**
+     * Build Oracle connection string supporting multiple formats:
+     * - EZConnect: //host:port/service_name or //host/service_name
+     * - TNS Alias: Just the alias name (from tnsnames.ora)
+     * - Full TNS Descriptor: (DESCRIPTION=...)
+     * - Host/Port/Service: Separate config values
+     */
+    private function buildOracleConnectionString(): string
+    {
+        $host = $this->config['host'] ?? '';
+        $port = $this->config['port'] ?? 1521;
+        $database = $this->config['database'] ?? '';
+
+        // If host starts with // it's EZConnect format - use as-is
+        if (str_starts_with($host, '//')) {
+            return $host;
+        }
+
+        // If host starts with ( it's a TNS descriptor - use as-is
+        if (str_starts_with($host, '(')) {
+            return $host;
+        }
+
+        // If host is empty but database is set, assume it's a TNS alias
+        if (empty($host) && !empty($database)) {
+            return $database;
+        }
+
+        // If database looks like EZConnect (contains /)
+        if (str_contains($database, '/')) {
+            return $database;
+        }
+
+        // Build EZConnect format from separate host/port/service
+        if (!empty($host) && !empty($database)) {
+            return "//{$host}:{$port}/{$database}";
+        }
+
+        throw new Exception("Invalid Oracle connection configuration. Provide either:\n" .
+            "- EZConnect format in 'host': //hostname:port/service_name\n" .
+            "- TNS alias in 'database'\n" .
+            "- Separate 'host', 'port', and 'database' (service name) values");
     }
 
     private function connectSQLServer(): void
