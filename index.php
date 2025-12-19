@@ -91,6 +91,15 @@
             backdrop-filter: blur(8px);
             background: rgba(30, 41, 59, 0.95);
         }
+
+        /* Isolated table item hover */
+        .isolated-item {
+            transition: all 0.15s ease;
+        }
+        .isolated-item:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-color: #3B82F6;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen overflow-hidden">
@@ -168,91 +177,129 @@
             </div>
         </header>
 
-        <!-- Main Content Area -->
-        <div class="flex-1 relative overflow-hidden">
-            <!-- Cytoscape Container -->
-            <div id="cy" class="absolute inset-0"></div>
+        <!-- Main Content Area with Sidebar -->
+        <div class="flex-1 flex overflow-hidden">
 
-            <!-- Loading Overlay -->
-            <div id="loading-overlay" class="absolute inset-0 bg-slate-900 flex items-center justify-center z-50">
-                <div class="text-center">
-                    <div class="loader mx-auto mb-4"></div>
-                    <p class="text-slate-400">Loading schema data...</p>
+            <!-- Left Sidebar - Isolated Tables -->
+            <div id="isolated-sidebar" class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col flex-shrink-0 hidden">
+                <!-- Sidebar Header -->
+                <div class="p-4 border-b border-slate-700">
+                    <div class="flex items-center gap-2 text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        <h2 class="font-semibold text-sm uppercase tracking-wider">Isolated Tables</h2>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Tables with no relationships</p>
+                </div>
+
+                <!-- Sidebar Search -->
+                <div class="p-3 border-b border-slate-700">
+                    <input
+                        type="text"
+                        id="isolated-search"
+                        placeholder="Filter isolated..."
+                        class="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                </div>
+
+                <!-- Table List -->
+                <div id="isolated-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Sidebar Footer -->
+                <div class="p-3 border-t border-slate-700 text-xs text-slate-500">
+                    <span id="isolated-count">0</span> isolated tables
                 </div>
             </div>
 
-            <!-- Error Overlay -->
-            <div id="error-overlay" class="absolute inset-0 bg-slate-900 flex items-center justify-center z-50 hidden">
-                <div class="text-center max-w-md p-8">
-                    <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                    <h2 class="text-xl font-bold mb-2">Connection Error</h2>
-                    <p id="error-message" class="text-slate-400 mb-4">Unable to load schema data.</p>
-                    <button
-                        id="btn-retry"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
-                    >
-                        Retry
+            <!-- Graph Container -->
+            <div class="flex-1 relative overflow-hidden">
+                <!-- Cytoscape Container -->
+                <div id="cy" class="absolute inset-0"></div>
+
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="absolute inset-0 bg-slate-900 flex items-center justify-center z-50">
+                    <div class="text-center">
+                        <div class="loader mx-auto mb-4"></div>
+                        <p class="text-slate-400">Loading schema data...</p>
+                    </div>
+                </div>
+
+                <!-- Error Overlay -->
+                <div id="error-overlay" class="absolute inset-0 bg-slate-900 flex items-center justify-center z-50 hidden">
+                    <div class="text-center max-w-md p-8">
+                        <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <h2 class="text-xl font-bold mb-2">Connection Error</h2>
+                        <p id="error-message" class="text-slate-400 mb-4">Unable to load schema data.</p>
+                        <button
+                            id="btn-retry"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Legend Panel -->
+                <div class="floating-panel absolute bottom-4 left-4 rounded-xl border border-slate-700 p-4 z-40">
+                    <h3 class="font-semibold mb-3 text-sm uppercase tracking-wider text-slate-400">Legend</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-0.5 bg-blue-500"></div>
+                            <span class="text-sm">Foreign Key</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-0.5 border-t-2 border-dashed border-red-500"></div>
+                            <span class="text-sm">Trigger Dependency</span>
+                        </div>
+                        <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-700">
+                            <div class="w-6 h-6 rounded bg-slate-700 border-2 border-blue-500"></div>
+                            <span class="text-sm">Connected Table</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded bg-slate-700 border-2 border-blue-400 border-opacity-50"></div>
+                            <span class="text-sm">Highly Connected (5+)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Panel -->
+                <div class="floating-panel absolute bottom-4 right-4 rounded-xl border border-slate-700 p-4 z-40">
+                    <h3 class="font-semibold mb-3 text-sm uppercase tracking-wider text-slate-400">Statistics</h3>
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        <div class="text-slate-400">Total Tables:</div>
+                        <div id="stat-tables" class="font-mono text-right">-</div>
+                        <div class="text-slate-400">Connected:</div>
+                        <div id="stat-connected" class="font-mono text-right text-green-400">-</div>
+                        <div class="text-slate-400">Foreign Keys:</div>
+                        <div id="stat-fk" class="font-mono text-right text-blue-400">-</div>
+                        <div class="text-slate-400">Trigger Deps:</div>
+                        <div id="stat-triggers" class="font-mono text-right text-red-400">-</div>
+                    </div>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="floating-panel absolute top-4 right-4 rounded-xl border border-slate-700 z-40 flex flex-col">
+                    <button id="btn-zoom-in" class="p-3 hover:bg-slate-700 rounded-t-xl transition-colors" title="Zoom in">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                    <div class="border-t border-slate-700"></div>
+                    <button id="btn-zoom-out" class="p-3 hover:bg-slate-700 rounded-b-xl transition-colors" title="Zoom out">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
                     </button>
                 </div>
-            </div>
 
-            <!-- Legend Panel -->
-            <div class="floating-panel absolute bottom-4 left-4 rounded-xl border border-slate-700 p-4 z-40">
-                <h3 class="font-semibold mb-3 text-sm uppercase tracking-wider text-slate-400">Legend</h3>
-                <div class="space-y-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-0.5 bg-blue-500"></div>
-                        <span class="text-sm">Foreign Key</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-0.5 border-t-2 border-dashed border-red-500"></div>
-                        <span class="text-sm">Trigger Dependency</span>
-                    </div>
-                    <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-700">
-                        <div class="w-6 h-6 rounded bg-slate-700 border-2 border-slate-500"></div>
-                        <span class="text-sm">Table</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-6 h-6 rounded bg-slate-800 border-2 border-slate-600 opacity-50"></div>
-                        <span class="text-sm">Isolated Table</span>
-                    </div>
-                </div>
+                <!-- Tooltip -->
+                <div id="tooltip" class="tooltip hidden"></div>
             </div>
-
-            <!-- Stats Panel -->
-            <div class="floating-panel absolute bottom-4 right-4 rounded-xl border border-slate-700 p-4 z-40">
-                <h3 class="font-semibold mb-3 text-sm uppercase tracking-wider text-slate-400">Statistics</h3>
-                <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                    <div class="text-slate-400">Tables:</div>
-                    <div id="stat-tables" class="font-mono text-right">-</div>
-                    <div class="text-slate-400">Foreign Keys:</div>
-                    <div id="stat-fk" class="font-mono text-right text-blue-400">-</div>
-                    <div class="text-slate-400">Trigger Deps:</div>
-                    <div id="stat-triggers" class="font-mono text-right text-red-400">-</div>
-                    <div class="text-slate-400">Isolated:</div>
-                    <div id="stat-isolated" class="font-mono text-right text-slate-500">-</div>
-                </div>
-            </div>
-
-            <!-- Zoom Controls -->
-            <div class="floating-panel absolute top-4 right-4 rounded-xl border border-slate-700 z-40 flex flex-col">
-                <button id="btn-zoom-in" class="p-3 hover:bg-slate-700 rounded-t-xl transition-colors" title="Zoom in">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                </button>
-                <div class="border-t border-slate-700"></div>
-                <button id="btn-zoom-out" class="p-3 hover:bg-slate-700 rounded-b-xl transition-colors" title="Zoom out">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Tooltip -->
-            <div id="tooltip" class="tooltip hidden"></div>
         </div>
     </div>
 
@@ -267,7 +314,7 @@
             // Global state
             let cy = null;
             let schemaData = null;
-            let searchTimeout = null;
+            let isolatedTables = [];
 
             // DOM Elements
             const elements = {
@@ -280,15 +327,19 @@
                 tooltip: document.getElementById('tooltip'),
                 dbInfo: document.getElementById('db-info'),
                 statTables: document.getElementById('stat-tables'),
+                statConnected: document.getElementById('stat-connected'),
                 statFk: document.getElementById('stat-fk'),
                 statTriggers: document.getElementById('stat-triggers'),
-                statIsolated: document.getElementById('stat-isolated'),
                 btnFit: document.getElementById('btn-fit'),
                 btnRelayout: document.getElementById('btn-relayout'),
                 btnExport: document.getElementById('btn-export'),
                 btnRetry: document.getElementById('btn-retry'),
                 btnZoomIn: document.getElementById('btn-zoom-in'),
-                btnZoomOut: document.getElementById('btn-zoom-out')
+                btnZoomOut: document.getElementById('btn-zoom-out'),
+                isolatedSidebar: document.getElementById('isolated-sidebar'),
+                isolatedList: document.getElementById('isolated-list'),
+                isolatedCount: document.getElementById('isolated-count'),
+                isolatedSearch: document.getElementById('isolated-search')
             };
 
             // ============================================================
@@ -305,45 +356,28 @@
                         'text-halign': 'center',
                         'background-color': '#334155',
                         'border-width': 2,
-                        'border-color': '#64748B',
+                        'border-color': '#3B82F6',
                         'color': '#F1F5F9',
-                        'font-size': '12px',
+                        'font-size': '11px',
                         'font-weight': 500,
                         'text-wrap': 'wrap',
-                        'text-max-width': '120px',
+                        'text-max-width': '100px',
                         'width': 'label',
                         'height': 'label',
-                        'padding': '14px',
+                        'padding': '12px',
                         'shape': 'roundrectangle',
                         'transition-property': 'background-color, border-color, opacity',
                         'transition-duration': '0.2s'
                     }
                 },
-                // Isolated nodes (no connections)
-                {
-                    selector: 'node[?isolated]',
-                    style: {
-                        'background-color': '#1E293B',
-                        'border-color': '#475569',
-                        'border-style': 'dashed',
-                        'color': '#94A3B8'
-                    }
-                },
-                // Connected nodes (have relationships)
-                {
-                    selector: 'node[connections > 0]',
-                    style: {
-                        'background-color': '#334155',
-                        'border-color': '#3B82F6'
-                    }
-                },
-                // Highly connected nodes
+                // Highly connected nodes (5+ connections)
                 {
                     selector: 'node[connections >= 5]',
                     style: {
                         'background-color': '#1E3A5F',
                         'border-color': '#60A5FA',
-                        'border-width': 3
+                        'border-width': 3,
+                        'font-weight': 600
                     }
                 },
                 // Highlighted node (search result)
@@ -351,8 +385,8 @@
                     selector: 'node.highlighted',
                     style: {
                         'background-color': '#1D4ED8',
-                        'border-color': '#60A5FA',
-                        'border-width': 3,
+                        'border-color': '#93C5FD',
+                        'border-width': 4,
                         'color': '#FFFFFF',
                         'z-index': 999
                     }
@@ -371,7 +405,7 @@
                 {
                     selector: 'node.dimmed',
                     style: {
-                        'opacity': 0.2
+                        'opacity': 0.15
                     }
                 },
                 // Hovered node
@@ -421,7 +455,7 @@
                 {
                     selector: 'edge.highlighted',
                     style: {
-                        'width': 3,
+                        'width': 4,
                         'z-index': 999
                     }
                 },
@@ -429,7 +463,7 @@
                 {
                     selector: 'edge.dimmed',
                     style: {
-                        'opacity': 0.1
+                        'opacity': 0.08
                     }
                 }
             ];
@@ -456,8 +490,18 @@
                     }
 
                     schemaData = data;
-                    initializeCytoscape(data);
-                    updateStats(data);
+
+                    // Separate isolated and connected tables
+                    const { connectedNodes, isolatedNodes } = separateNodes(data);
+                    isolatedTables = isolatedNodes;
+
+                    // Initialize graph with only connected nodes
+                    initializeCytoscape(connectedNodes, data.edges);
+
+                    // Populate isolated tables sidebar
+                    populateIsolatedSidebar(isolatedNodes);
+
+                    updateStats(data, connectedNodes.length, isolatedNodes.length);
                     updateDbInfo(data.meta);
                     showLoading(false);
 
@@ -467,33 +511,110 @@
                 }
             }
 
+            /**
+             * Separate nodes into connected and isolated
+             */
+            function separateNodes(data) {
+                const connectedNodes = [];
+                const isolatedNodes = [];
+
+                data.nodes.forEach(node => {
+                    if (node.data.isolated) {
+                        isolatedNodes.push(node);
+                    } else {
+                        connectedNodes.push(node);
+                    }
+                });
+
+                // Sort isolated nodes alphabetically
+                isolatedNodes.sort((a, b) => a.data.label.localeCompare(b.data.label));
+
+                return { connectedNodes, isolatedNodes };
+            }
+
+            // ============================================================
+            // Isolated Tables Sidebar
+            // ============================================================
+
+            function populateIsolatedSidebar(isolatedNodes) {
+                if (isolatedNodes.length === 0) {
+                    elements.isolatedSidebar.classList.add('hidden');
+                    return;
+                }
+
+                elements.isolatedSidebar.classList.remove('hidden');
+                elements.isolatedCount.textContent = isolatedNodes.length;
+
+                renderIsolatedList(isolatedNodes);
+            }
+
+            function renderIsolatedList(nodes, filter = '') {
+                const filterLower = filter.toLowerCase();
+                const filteredNodes = filter
+                    ? nodes.filter(n => n.data.label.toLowerCase().includes(filterLower))
+                    : nodes;
+
+                elements.isolatedList.innerHTML = filteredNodes.map(node => `
+                    <div class="isolated-item px-3 py-2 rounded border border-slate-700 cursor-pointer text-sm hover:border-blue-500"
+                         data-table="${escapeHtml(node.data.label)}">
+                        <div class="font-medium text-slate-200 truncate">${escapeHtml(node.data.label)}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">
+                            ${formatNumber(node.data.rowCount)} rows
+                        </div>
+                    </div>
+                `).join('');
+
+                // Add click handlers
+                elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const tableName = item.dataset.table;
+                        elements.searchInput.value = tableName;
+                        performSearch(tableName);
+                    });
+                });
+            }
+
             // ============================================================
             // Cytoscape Initialization
             // ============================================================
 
-            function initializeCytoscape(data) {
+            function initializeCytoscape(nodes, edges) {
                 // Destroy existing instance
                 if (cy) {
                     cy.destroy();
                 }
 
+                // Calculate dynamic spacing based on node count
+                const nodeCount = nodes.length;
+                const edgeCount = edges.length;
+
+                // More nodes/edges = more spacing needed
+                const baseSep = 60;
+                const baseRank = 120;
+
+                // Increase spacing for complex graphs
+                const complexityFactor = Math.min(2.5, 1 + (edgeCount / nodeCount) * 0.3);
+                const nodeSep = Math.round(baseSep * complexityFactor);
+                const rankSep = Math.round(baseRank * complexityFactor);
+
                 // Create Cytoscape instance
                 cy = cytoscape({
                     container: elements.cy,
-                    elements: [...data.nodes, ...data.edges],
+                    elements: [...nodes, ...edges],
                     style: cytoscapeStyles,
                     layout: {
                         name: 'dagre',
                         rankDir: 'TB',
-                        nodeSep: 80,
-                        edgeSep: 50,
-                        rankSep: 100,
-                        padding: 50,
+                        nodeSep: nodeSep,
+                        edgeSep: 40,
+                        rankSep: rankSep,
+                        padding: 60,
                         animate: true,
                         animationDuration: 500,
-                        fit: true
+                        fit: true,
+                        spacingFactor: 1.2
                     },
-                    minZoom: 0.1,
+                    minZoom: 0.05,
                     maxZoom: 4,
                     wheelSensitivity: 0.3,
                     boxSelectionEnabled: false
@@ -557,7 +678,7 @@
             // ============================================================
 
             function performSearch(query) {
-                if (!cy || !query.trim()) {
+                if (!query.trim()) {
                     resetHighlighting();
                     elements.clearSearch.classList.add('hidden');
                     return;
@@ -566,19 +687,47 @@
                 elements.clearSearch.classList.remove('hidden');
                 const searchTerm = query.toLowerCase().trim();
 
-                // Find matching nodes
+                // Check if it's an isolated table
+                const isIsolated = isolatedTables.some(t =>
+                    t.data.label.toLowerCase() === searchTerm ||
+                    t.data.label.toLowerCase().includes(searchTerm)
+                );
+
+                if (isIsolated && cy) {
+                    // Dim all nodes when searching for isolated table
+                    cy.elements().addClass('dimmed');
+
+                    // Highlight in sidebar
+                    elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
+                        if (item.dataset.table.toLowerCase().includes(searchTerm)) {
+                            item.classList.add('bg-blue-900', 'border-blue-500');
+                            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        } else {
+                            item.classList.remove('bg-blue-900', 'border-blue-500');
+                        }
+                    });
+                    return;
+                }
+
+                // Clear sidebar highlights
+                elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
+                    item.classList.remove('bg-blue-900', 'border-blue-500');
+                });
+
+                if (!cy) return;
+
+                // Find matching nodes in graph
                 const matchingNodes = cy.nodes().filter(node => {
                     const label = node.data('label').toLowerCase();
                     return label.includes(searchTerm);
                 });
 
                 if (matchingNodes.length === 0) {
-                    // No matches - dim everything slightly
                     cy.elements().addClass('dimmed');
                     return;
                 }
 
-                // Get the first (best) match and focus on it
+                // Focus on the first match
                 const primaryMatch = matchingNodes.first();
                 focusNode(primaryMatch.id());
             }
@@ -614,8 +763,14 @@
             }
 
             function resetHighlighting() {
-                if (!cy) return;
-                cy.elements().removeClass('highlighted neighbor dimmed');
+                if (cy) {
+                    cy.elements().removeClass('highlighted neighbor dimmed');
+                }
+
+                // Clear sidebar highlights
+                elements.isolatedList.querySelectorAll('.isolated-item').forEach(item => {
+                    item.classList.remove('bg-blue-900', 'border-blue-500');
+                });
             }
 
             // ============================================================
@@ -624,8 +779,6 @@
 
             function buildNodeTooltip(data) {
                 const connectionText = data.connections === 1 ? 'connection' : 'connections';
-                const isolatedBadge = data.isolated ?
-                    '<span class="inline-block px-2 py-0.5 bg-slate-600 text-slate-300 text-xs rounded mt-1">Isolated</span>' : '';
 
                 return `
                     <div class="font-semibold text-blue-400 mb-2">${escapeHtml(data.label)}</div>
@@ -633,7 +786,6 @@
                         <div><span class="text-slate-500">Rows:</span> ${formatNumber(data.rowCount)}</div>
                         <div><span class="text-slate-500">Links:</span> ${data.connections} ${connectionText}</div>
                     </div>
-                    ${isolatedBadge}
                 `;
             }
 
@@ -710,13 +862,11 @@
                 elements.errorOverlay.classList.add('hidden');
             }
 
-            function updateStats(data) {
+            function updateStats(data, connectedCount, isolatedCount) {
                 elements.statTables.textContent = data.meta.tableCount;
+                elements.statConnected.textContent = connectedCount;
                 elements.statFk.textContent = data.meta.fkCount;
                 elements.statTriggers.textContent = data.meta.triggerDepCount;
-
-                const isolatedCount = data.nodes.filter(n => n.data.isolated).length;
-                elements.statIsolated.textContent = isolatedCount;
             }
 
             function updateDbInfo(meta) {
@@ -726,7 +876,7 @@
                     'sqlsrv': 'SQL Server'
                 };
                 const label = dbTypeLabels[meta.dbType] || meta.dbType.toUpperCase();
-                elements.dbInfo.textContent = `${label}: ${meta.database}`;
+                elements.dbInfo.textContent = `${label}: ${meta.database || 'Connected'}`;
                 elements.dbInfo.classList.remove('hidden');
             }
 
@@ -761,23 +911,31 @@
             function runLayout() {
                 if (!cy) return;
 
+                const nodeCount = cy.nodes().length;
+                const edgeCount = cy.edges().length;
+
+                const complexityFactor = Math.min(2.5, 1 + (edgeCount / Math.max(1, nodeCount)) * 0.3);
+                const nodeSep = Math.round(60 * complexityFactor);
+                const rankSep = Math.round(120 * complexityFactor);
+
                 cy.layout({
                     name: 'dagre',
                     rankDir: 'TB',
-                    nodeSep: 80,
-                    edgeSep: 50,
-                    rankSep: 100,
-                    padding: 50,
+                    nodeSep: nodeSep,
+                    edgeSep: 40,
+                    rankSep: rankSep,
+                    padding: 60,
                     animate: true,
                     animationDuration: 500,
-                    fit: true
+                    fit: true,
+                    spacingFactor: 1.2
                 }).run();
             }
 
             function fitToScreen() {
                 if (!cy) return;
                 cy.animate({
-                    fit: { padding: 50 },
+                    fit: { padding: 60 },
                     duration: 300
                 });
             }
@@ -787,6 +945,7 @@
             // ============================================================
 
             function escapeHtml(text) {
+                if (!text) return '';
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
@@ -809,7 +968,7 @@
             // Event Bindings
             // ============================================================
 
-            // Search input
+            // Main search input
             elements.searchInput.addEventListener('input', debounce(function(e) {
                 performSearch(e.target.value);
             }, 200));
@@ -821,6 +980,11 @@
                     elements.clearSearch.classList.add('hidden');
                 }
             });
+
+            // Isolated sidebar search
+            elements.isolatedSearch.addEventListener('input', debounce(function(e) {
+                renderIsolatedList(isolatedTables, e.target.value);
+            }, 150));
 
             // Clear search button
             elements.clearSearch.addEventListener('click', function() {
