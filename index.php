@@ -625,22 +625,39 @@
             }
 
             function getLayoutConfig(nodeCount, edgeCount) {
-                // Use COSE layout for better 2D distribution
+                // Calculate spacing based on complexity
+                const complexity = edgeCount / Math.max(1, nodeCount);
+                const repulsionMultiplier = Math.max(1, complexity * 2);
+                const edgeLengthMultiplier = Math.max(1, complexity * 1.5);
+
                 return {
                     name: 'cose',
                     animate: false,
-                    padding: 80,
-                    nodeRepulsion: function(node) { return 8000; },
-                    idealEdgeLength: function(edge) { return 150; },
-                    edgeElasticity: function(edge) { return 100; },
+                    padding: 120,
+                    // Strong node repulsion to push nodes apart
+                    nodeRepulsion: function(node) {
+                        return 80000 * repulsionMultiplier;
+                    },
+                    // Longer edges for better visibility
+                    idealEdgeLength: function(edge) {
+                        return 250 * edgeLengthMultiplier;
+                    },
+                    // Lower elasticity = edges can stretch more
+                    edgeElasticity: function(edge) { return 50; },
                     nestingFactor: 1.2,
-                    gravity: 0.25,
-                    numIter: 1000,
-                    initialTemp: 300,
+                    // Low gravity = nodes spread more freely
+                    gravity: 0.08,
+                    // More iterations for better layout
+                    numIter: 2000,
+                    initialTemp: 400,
                     coolingFactor: 0.95,
                     minTemp: 1.0,
                     fit: true,
-                    randomize: true
+                    randomize: true,
+                    // Space between disconnected components
+                    componentSpacing: 200,
+                    // Node overlap prevention
+                    nodeOverlap: 50
                 };
             }
 
